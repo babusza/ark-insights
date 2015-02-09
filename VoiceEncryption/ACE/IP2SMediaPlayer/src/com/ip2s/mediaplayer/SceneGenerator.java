@@ -9,7 +9,10 @@ import java.io.*;
 import java.text.DecimalFormat;
 import javafx.application.Platform;
 import javafx.beans.value.*;
+import javafx.collections.ObservableList;
 import javafx.event.*;
+import javafx.geometry.HPos;
+import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -43,6 +46,9 @@ public class SceneGenerator {
     double pRate = 0.1;
     String trackID;
 
+    private static final double START_FREQ = 250.0;
+    private static final int BAND_COUNT = 1;
+
     public Scene createScene(String fileName, String path, double defaultRate, String trackID) {
         this.trackID = trackID;
         imagePlay = new Image(getClass().getResourceAsStream("play.png"));
@@ -71,6 +77,8 @@ public class SceneGenerator {
         final Button forward = new Button("", new ImageView(imageForward));
         forward.setId("forward");
         lbNote.setText("Speeds min 0.5   max 2.5");
+        
+                
         player.setOnEndOfMedia(new Runnable() {
             @Override
             public void run() {
@@ -87,6 +95,7 @@ public class SceneGenerator {
                 //      player.setStartTime(new Duration(0.0));
             }
         });
+
         slider.setOnMouseDragged(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {
@@ -160,6 +169,8 @@ public class SceneGenerator {
                     nRate = 2.5;
                 }
                 player.setRate(nRate);
+                System.out.println(player.getAudioSpectrumInterval() + ":" + player.getAudioSpectrumNumBands() + ":" + player.getAudioSpectrumThreshold());
+                //  player.getAudioEqualizer().
                 String r = nRate + "";
                 if (r.length() > 3) {
                     r = r.substring(0, 3);
@@ -231,6 +242,56 @@ public class SceneGenerator {
         );
 
         return new Scene(layout, 400, 350);
+    }
+
+    private void createEQBands(GridPane gp) {
+        final ObservableList<EqualizerBand> bands = player.getAudioEqualizer().getBands();
+        bands.clear();
+        double min = EqualizerBand.MIN_GAIN;
+        double max = EqualizerBand.MAX_GAIN;
+        double mid = (max - min) / 2;
+        double freq = START_FREQ;
+
+        for (int j = 0; j < BAND_COUNT; j++) {
+            double theta = (double) j / (double) (BAND_COUNT - 1) * (2 * Math.PI);
+            double scale = 0.4 * (1 + Math.cos(theta));
+            double gain = min + mid + (min * scale);
+            bands.add(new EqualizerBand(freq, freq / 2, gain));
+            freq *= 2;
+        }
+
+        for (int i = 0; i < bands.size(); i++) {
+            EqualizerBand eq = bands.get(i);
+            Slider s = createEQSlider(eq, min, max);
+
+            final Label l = new Label(formatFrequency(eq.getCenterFrequency()));
+            l.getStyleClass().addAll("mediaText", "eqLable");
+
+            GridPane.setHalignment(l, HPos.CENTER);
+            GridPane.setHalignment(s, HPos.CENTER);
+            GridPane.setHgrow(s, Priority.ALWAYS);
+
+            gp.add(l, i, 1);
+            gp.add(s, i, 2);
+
+        }
+    }
+
+    private Slider createEQSlider(EqualizerBand eb, double min, double max) {
+        final Slider s = new Slider(min, max, eb.getGain());
+        s.getStyleClass().add("eqSlider");
+        s.setOrientation(Orientation.VERTICAL);
+        s.valueProperty().bindBidirectional(eb.gainProperty());
+        s.setPrefWidth(44);
+        return s;
+    }
+
+    private String formatFrequency(double centerFre) {
+        if (centerFre < 1000) {
+            return String.format("%.0f Hz", centerFre);
+        } else {
+            return String.format("%.1f kHz", centerFre / 1000);
+        }
     }
 
     public void setCurrentlyPlaying(final MediaPlayer newPlayer) {

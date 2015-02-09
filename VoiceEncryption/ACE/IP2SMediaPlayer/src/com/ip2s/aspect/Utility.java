@@ -15,6 +15,8 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.Properties;
 import java.util.Vector;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -31,12 +33,10 @@ public class Utility {
     public Utility() throws Exception {
         this.bgColor = new Color(204, 255, 255);
         Properties prop = new Properties();
-               String path = getClass().getResource("Utility.class").toString();
-        //String path = "file   :\\C:\\Program Files\\Ark-Insights Recording Player(on-site)\\";
+//                  String path = "file   :\\C:\\Program Files\\Ark-Insights Recording Player(on-site)\\app";
+        String path = getClass().getResource("Utility.class").toString();
         path = path.replaceAll("%20", " ");
-
         path = path.substring(9, path.indexOf("Ark-Insights Recording Player(on-site)")) + "Ark-Insights Recording Player(on-site)\\";
-
         InputStream input = new FileInputStream(path + "\\app\\database.properties");
         prop.load(input);
         connection = prop.getProperty("connection");
@@ -62,9 +62,7 @@ public class Utility {
         ResultSet rs = getData(command, database);
         System.out.println(rs);
         while (rs.next()) {
-            // if (userID.equals(rs.getString("UserId").trim())) {
             return new String[]{rs.getString("Play"), rs.getString("Export")};
-            // }
         }
         return permission;
     }
@@ -121,9 +119,6 @@ public class Utility {
     }
 
     public static ResultSet getRecord(Object[] para, String database) throws Exception {
-        // Vector vRecord = new Vector(); 
-        //Object[]{startDate, endDate, serviceID, agent, phoneNo, customerName, mobile, home, 
-        //office, callRefID, userID, trackID, customerID, dispostionID, recordSec, secFact};
         Object[] obj = para;
         String startDate = (String) para[0];
         String endDate = (String) para[1];

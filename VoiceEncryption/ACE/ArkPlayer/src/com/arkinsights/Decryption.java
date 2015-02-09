@@ -217,8 +217,7 @@ public class Decryption extends javax.swing.JFrame {
 
     private void btPlayActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btPlayActionPerformed
         // TODO add your handling code here:
-        //    btPlay.setEnabled(false);
-
+        
         try {
             // Runtime.getRuntime().freeMemory();
             if (tfVoicePath.getText().trim().length() == 0) {
@@ -234,7 +233,6 @@ public class Decryption extends javax.swing.JFrame {
                 }
                 ip2s = new IP2sMediaPlayer(this);
             }
-
             rsa.setKeyGenerator();
             rsa.setSecretKey();
             File file = null;
@@ -253,15 +251,15 @@ public class Decryption extends javax.swing.JFrame {
                 return;
             }
             rsa.setPrivateKey(key);
-
             String fileName = getMD5(file.getName()) + ".temp";
-
             String pathFile = System.getProperty("java.io.tmpdir")+"//YPRISVGMUPO//";
             File temp = new File(pathFile);
             rsa.setDataOutputDecrypt(pathFile + fileName);
             boolean bDec = rsa.decrypt(tfVoicePath.getText());
             in.close();
-            ip2s.play(fileName, pathFile, 1.0, file.getName());
+             btPlay.setEnabled(false);
+            ip2s.play(fileName, pathFile+fileName, 1.0f, file.getName());
+           
         } catch (Exception e) {
             System.out.println("Error : " + e.getMessage());
             String message = e.getMessage();

@@ -148,6 +148,7 @@ public class FrmMediaPlayer extends javax.swing.JFrame {
             if (permission[1].equals("Y")) {
                 btExport.setVisible(true);
             }
+            arkPlayer = new IP2sMediaPlayer(this);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error : " + e.getMessage());
             System.exit(0);
@@ -256,29 +257,8 @@ public class FrmMediaPlayer extends javax.swing.JFrame {
             int i = Integer.parseInt(chkDate);
             sdate = sdate.substring(0, 6) + (i - 543);
         }
-        // String[] s = sdate.split("/");
-        // s[2] = (Integer.parseInt(s[2]) + 543) + "";
-        // sdate = s[0] + "/" + s[1] + "/" + s[2];
         dfStartDate.setText(sdate);
-        dfEndDate.setText(sdate);
-        /*
-         Date def = new Date();
-         UtilDateModel sModel = new UtilDateModel();
-         sModel.setValue(def);
-
-         JDatePanelImpl datePanel1 = new JDatePanelImpl(sModel);
-         dfStartDate = new JDatePickerImpl(datePanel1, new DateLabelFormatter());
-         this.add(dfStartDate).setBounds(110, 50, 120, 30);
-
-         UtilDateModel eModel = new UtilDateModel();
-         eModel.setValue(def);
-         JDatePanelImpl datePanel2 = new JDatePanelImpl(eModel);
-         dfEndDate = new JDatePickerImpl(datePanel2, new DateLabelFormatter());
-         this.add(dfEndDate).setBounds(110, 90, 120, 30);
-
-         dfEndDate.setBackground(new java.awt.Color(204, 255, 255));
-         dfStartDate.setBackground(new java.awt.Color(204, 255, 255));
-         */
+        dfEndDate.setText(sdate);        
     }
 
     public void initData() throws Exception {
@@ -319,7 +299,7 @@ public class FrmMediaPlayer extends javax.swing.JFrame {
         }
         System.out.println("add dis");
         cbRate.removeAllItems();
-        double[] dRate = {1.0, 1.2, 1.5, 1.7, 2.0, 2.2};
+        float[] dRate = {1.0f, 1.2f, 1.5f, 1.7f, 2.0f, 2.2f};
         for (int i = 0; i < dRate.length; i++) {
             cbRate.addItem(dRate[i]);
         }
@@ -799,14 +779,10 @@ tfTrackID.addKeyListener(new java.awt.event.KeyAdapter() {
                         page = 1;
                         searchData(para, 'S');
                     } catch (Exception ex) {
-                        dlgLoading.dispose();
-                        if (arkPlayer == null) {
-                            JOptionPane.showMessageDialog(dlgLoading, ex.getMessage());
-                        } else {
-                            arkPlayer.setOntop(false);
-                            JOptionPane.showMessageDialog(dlgLoading, ex.getMessage());
-                            arkPlayer.setOntop(true);
-                        }
+                       dlgLoading.dispose();
+                        arkPlayer.setOntop(false);
+                        arkPlayer.pause();
+                        JOptionPane.showMessageDialog(dlgLoading, ex.getMessage());                      
                     }
                     SwingUtilities.invokeLater(new Runnable() {//do swing work on EDT  
                         public void run() {
@@ -817,17 +793,11 @@ tfTrackID.addKeyListener(new java.awt.event.KeyAdapter() {
             };
             thread.start();
             dlgLoading.setVisible(true);
-
-        } // 
+        } 
         catch (Exception e) {
-            if (arkPlayer == null) {
-                JOptionPane.showMessageDialog(this, e.getMessage());
-            } else {
-                arkPlayer.setOntop(false);
-                JOptionPane.showMessageDialog(this, e.getMessage());
-                arkPlayer.setOntop(true);
-            }
-
+            arkPlayer.setOntop(false);
+             arkPlayer.pause();
+            JOptionPane.showMessageDialog(this, e.getMessage());
         }
     }//GEN-LAST:event_btSearchActionPerformed
     private String getDateFormat(String date) throws Exception {
@@ -842,23 +812,6 @@ tfTrackID.addKeyListener(new java.awt.event.KeyAdapter() {
         return s[2] + "-" + s[1] + "-" + s[0];
     }
 
-//    private String getTimeFormat(String time) throws Exception {
-//        boolean pm = time.indexOf("PM") > 0 || time.indexOf("หลังเที่ยง")>0;
-//        System.out.println("time : " + time + " pm " + pm);
-//        if (pm) {
-//            DateFormat outFormat = new SimpleDateFormat("HH:mm:ss");
-//            DateFormat inFormat = new SimpleDateFormat("hh:mm:ss aa");
-//            Date date = inFormat.parse(time);
-//            time = outFormat.format(date);
-//        } else {
-//            int hh = Integer.parseInt(time.substring(0, 2));
-//            if (hh == 12) {
-//                time = "00" + time.substring(2);
-//            }
-//        }
-//        System.out.println("time : " + time.substring(0, 8));
-//        return time.substring(0, 8);
-//    }
     private int searchTotal(Object[] para) throws Exception {
 
         rs = Utility.getRecord(para, tenant.getDatabase());
@@ -927,13 +880,6 @@ tfTrackID.addKeyListener(new java.awt.event.KeyAdapter() {
         Integer dispostionID = 0;
         if (cbDispostion.getSelectedIndex() > 0) {
             String dispostionName = (String) cbDispostion.getSelectedItem();
-            /*   for (Object vService1 : vDispostion) {
-             String[] data = (String[]) vService1;
-             if (dispostionName.equals(data[2])) {
-             dispostionID = Integer.parseInt(data[0]);
-             }
-             }
-             */
             dispostionID = Integer.parseInt(disposition.getDispositionID(dispostionName));
         }
         String voiceTime = voicTimeFormat.format(spVoice.getValue());
@@ -1045,27 +991,21 @@ tfTrackID.addKeyListener(new java.awt.event.KeyAdapter() {
         }
     }
 
-    //String time = String.format("%02d:%02d:%02d", (int)dTime/3600, ((int)dTime%3600)/60, (int)dTime % 60);
-
     private void btPlayActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btPlayActionPerformed
         // TODO add your handling code here:
-
         Thread t = new Thread() {
             public void run() {
-                try {
-                    playMedia();
+                try {  
+                    arkPlayer.setOntop(false);
+                     arkPlayer.pause();
+                    playMedia();                    
                 } catch (Exception ex) {
                     dlgLoading.dispose();
-                    if (arkPlayer == null) {
-                        JOptionPane.showMessageDialog(new JFrame(), ex.getMessage());
-                    } else {
-                        arkPlayer.setOntop(false);
-                        JOptionPane.showMessageDialog(new JFrame(), ex.getMessage());
-                        arkPlayer.setOntop(true);
-                    }
-
+                    arkPlayer.setOntop(false);
+                     arkPlayer.pause();
+                    JOptionPane.showMessageDialog(new JFrame(), ex.getMessage());
                 }
-                SwingUtilities.invokeLater(new Runnable() {//do swing work on EDT  
+                SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
                         dlgLoading.dispose();
                     }
@@ -1074,7 +1014,6 @@ tfTrackID.addKeyListener(new java.awt.event.KeyAdapter() {
         };
         t.start();
         dlgLoading.setVisible(true);
-
     }//GEN-LAST:event_btPlayActionPerformed
 
     private void playMedia() {
@@ -1086,44 +1025,31 @@ tfTrackID.addKeyListener(new java.awt.event.KeyAdapter() {
             }
             String trackID = tbDetail.getValueAt(row, 9).toString().trim();
             System.out.println("curTrack " + curTrack);
-            System.out.println("trackID " + trackID);
-            if (this.curTrack.equals(trackID)) {
-                arkPlayer.setOntop(false);
-                JOptionPane.showMessageDialog(this, "Voice : " + trackID + " is running");
-                arkPlayer.setOntop(true);
-                return;
-            }
-            if (arkPlayer == null) {
-                arkPlayer = new IP2sMediaPlayer(this);
-            } else {
-                arkPlayer.close();
-                arkPlayer.dispose();
-                arkPlayer = new IP2sMediaPlayer(this);
-            }
-            String t = tbDetail.getValueAt(row, 2).toString();
-            if (t.equals("00:00:00")) {
+//            if (this.curTrack.equals(trackID)) {
+//                arkPlayer.setOntop(false);
+//                JOptionPane.showMessageDialog(this, "Voice : " + trackID + " is running");
+//                arkPlayer.setOntop(true);
+//                return;
+//            }
+            String time = tbDetail.getValueAt(row, 2).toString();
+            if (time.equals("00:00:00")) {
                 throw new Exception("No duration time");
             }
             String md5Name = getMedia(trackID, row);
-            double rate = (double) cbRate.getSelectedItem();
+            float rate = (float) cbRate.getSelectedItem();
             if (enc) {
                 boolean dec = decrypt(md5Name);
             }
             arkPlayer.play(md5Name + ".temp", utility.outputPath, rate, trackID);
             curTrack = trackID;
-
+            arkPlayer.setOntop(true);
         } catch (Exception e) {
             if (e.getMessage().trim().length() == 0) {
-                System.out.println("");
+                System.out.println("Error");
             } else {
-                if (arkPlayer == null) {
-                    JOptionPane.showMessageDialog(this, e.getMessage());
-                } else {
-                    arkPlayer.setOntop(false);
-                    JOptionPane.showMessageDialog(this, e.getMessage());
-                    arkPlayer.setOntop(true);
-                }
-
+                arkPlayer.setOntop(false);
+                 arkPlayer.pause();
+                JOptionPane.showMessageDialog(this, e.getMessage());
             }
         }
     }
@@ -1132,8 +1058,6 @@ tfTrackID.addKeyListener(new java.awt.event.KeyAdapter() {
         try {
             InetAddress add = InetAddress.getByName(utility.voice.replace("/", ""));
             return add.isReachable(2000);
-            // Connection conn = DriverManager.getConnection(utility.connection + "database=" + tenant.getDatabase());
-            //  return true;
         } catch (Exception e) {
             return false;
         }
@@ -1165,7 +1089,6 @@ tfTrackID.addKeyListener(new java.awt.event.KeyAdapter() {
                 Files.copy(pathO, out);
                 enc = false;
             } else {
-                System.out.println("file no found");
                 throw new Exception("File No Found");
             }
         }
@@ -1355,18 +1278,19 @@ tfTrackID.addKeyListener(new java.awt.event.KeyAdapter() {
             pairgen.initialize(512, random);
             KeyPair keyPair = pairgen.generateKeyPair();
 
-            if (arkPlayer != null) {
-                arkPlayer.setOntop(false);
-            }
+//            if (arkPlayer != null) {
+            arkPlayer.setOntop(false);
+             arkPlayer.pause();
+//            }
 
             int returnVal = fcFile.showDialog(this, "Select Folder");
             if (returnVal == JFileChooser.APPROVE_OPTION) {
                 File file = fcFile.getSelectedFile();
                 path = file.getParent() + "\\" + file.getName() + "\\";
             } else {
-                if (arkPlayer != null) {
-                    arkPlayer.setOntop(true);
-                }
+//                if (arkPlayer != null) {
+              //  arkPlayer.setOntop(true);
+//                }
                 return;
             }
 
@@ -1377,13 +1301,14 @@ tfTrackID.addKeyListener(new java.awt.event.KeyAdapter() {
             lastDirectory = fcFile.getSelectedFile();
 
         } catch (Exception e) {
-            if (arkPlayer == null) {
-                JOptionPane.showMessageDialog(this, e.getMessage());
-            } else {
-                arkPlayer.setOntop(false);
-                JOptionPane.showMessageDialog(this, e.getMessage());
-                arkPlayer.setOntop(true);
-            }
+//            if (arkPlayer == null) {
+//                JOptionPane.showMessageDialog(this, e.getMessage());
+//            } else {
+            arkPlayer.setOntop(false);
+             arkPlayer.pause();
+            JOptionPane.showMessageDialog(this, e.getMessage());
+          //  arkPlayer.setOntop(true);
+//            }
         }
     }//GEN-LAST:event_btExportActionPerformed
 
@@ -1423,23 +1348,25 @@ tfTrackID.addKeyListener(new java.awt.event.KeyAdapter() {
                 rsa.encrypt();
                 String message = "Export Complete\n" + keyName + "\n" + voiceName;
                 dlgLoading.dispose();
-                if (arkPlayer == null) {
-                    JOptionPane.showMessageDialog(dlgLoading, message);
-                } else {
-                    arkPlayer.setOntop(false);
-                    JOptionPane.showMessageDialog(dlgLoading, message);
-                    arkPlayer.setOntop(true);
-                }
+//                if (arkPlayer == null) {
+//                    JOptionPane.showMessageDialog(dlgLoading, message);
+//                } else {
+                arkPlayer.setOntop(false);
+                 arkPlayer.pause();
+                JOptionPane.showMessageDialog(dlgLoading, message);
+            //    arkPlayer.setOntop(true);
+//                }
 
             } catch (Exception ex) {
                 dlgLoading.dispose();
-                if (arkPlayer == null) {
-                    JOptionPane.showMessageDialog(dlgLoading, ex.getMessage());
-                } else {
-                    arkPlayer.setOntop(false);
-                    JOptionPane.showMessageDialog(dlgLoading, ex.getMessage());
-                    arkPlayer.setOntop(true);
-                }
+//                if (arkPlayer == null) {
+//                    JOptionPane.showMessageDialog(dlgLoading, ex.getMessage());
+//                } else {
+                arkPlayer.setOntop(false);
+                 arkPlayer.pause();
+                JOptionPane.showMessageDialog(dlgLoading, ex.getMessage());
+             //   arkPlayer.setOntop(true);
+//                }
             }
             SwingUtilities.invokeLater(new Runnable() {//do swing work on EDT  
                 public void run() {
@@ -1520,13 +1447,14 @@ tfTrackID.addKeyListener(new java.awt.event.KeyAdapter() {
                     } catch (Exception ex) {
 
                         dlgLoading.dispose();
-                        if (arkPlayer == null) {
-                            JOptionPane.showMessageDialog(dlgLoading, ex.getMessage());
-                        } else {
-                            arkPlayer.setOntop(false);
-                            JOptionPane.showMessageDialog(dlgLoading, ex.getMessage());
-                            arkPlayer.setOntop(true);
-                        }
+//                        if (arkPlayer == null) {
+//                            JOptionPane.showMessageDialog(dlgLoading, ex.getMessage());
+//                        } else {
+                        arkPlayer.setOntop(false);
+                         arkPlayer.pause();
+                        JOptionPane.showMessageDialog(dlgLoading, ex.getMessage());
+                      //  arkPlayer.setOntop(true);
+//                        }
 
                     }
                     SwingUtilities.invokeLater(new Runnable() {//do swing work on EDT  
@@ -1540,13 +1468,14 @@ tfTrackID.addKeyListener(new java.awt.event.KeyAdapter() {
             dlgLoading.setVisible(true);
 
         } catch (Exception e) {
-            if (arkPlayer == null) {
-                JOptionPane.showMessageDialog(this, e.getMessage());
-            } else {
-                arkPlayer.setOntop(false);
-                JOptionPane.showMessageDialog(this, e.getMessage());
-                arkPlayer.setOntop(true);
-            }
+//            if (arkPlayer == null) {
+//                JOptionPane.showMessageDialog(this, e.getMessage());
+//            } else {
+            arkPlayer.setOntop(false);
+             arkPlayer.pause();
+            JOptionPane.showMessageDialog(this, e.getMessage());
+      //      arkPlayer.setOntop(true);
+//            }
         }
     }//GEN-LAST:event_btNextActionPerformed
 
@@ -1568,13 +1497,14 @@ tfTrackID.addKeyListener(new java.awt.event.KeyAdapter() {
                         searchData(para, 'P');
                     } catch (Exception ex) {
                         dlgLoading.dispose();
-                        if (arkPlayer == null) {
-                            JOptionPane.showMessageDialog(dlgLoading, ex.getMessage());
-                        } else {
-                            arkPlayer.setOntop(false);
-                            JOptionPane.showMessageDialog(dlgLoading, ex.getMessage());
-                            arkPlayer.setOntop(true);
-                        }
+//                        if (arkPlayer == null) {
+//                            JOptionPane.showMessageDialog(dlgLoading, ex.getMessage());
+//                        } else {
+                        arkPlayer.setOntop(false);
+                         arkPlayer.pause();
+                        JOptionPane.showMessageDialog(dlgLoading, ex.getMessage());
+                      //  arkPlayer.setOntop(true);
+//                        }
                     }
                     SwingUtilities.invokeLater(new Runnable() {//do swing work on EDT  
                         public void run() {
@@ -1602,13 +1532,14 @@ tfTrackID.addKeyListener(new java.awt.event.KeyAdapter() {
                 btPrevious.setEnabled(true);
             }
         } catch (Exception e) {
-            if (arkPlayer == null) {
-                JOptionPane.showMessageDialog(this, e.getMessage());
-            } else {
-                arkPlayer.setOntop(false);
-                JOptionPane.showMessageDialog(this, e.getMessage());
-                arkPlayer.setOntop(true);
-            }
+//            if (arkPlayer == null) {
+//                JOptionPane.showMessageDialog(this, e.getMessage());
+//            } else {
+            arkPlayer.setOntop(false);
+             arkPlayer.pause();
+            JOptionPane.showMessageDialog(this, e.getMessage());
+       //     arkPlayer.setOntop(true);
+//            }
         }
     }//GEN-LAST:event_btPreviousActionPerformed
 
